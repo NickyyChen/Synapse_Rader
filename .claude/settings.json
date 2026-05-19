@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(/plugin marketplace *)",
+      "Bash(claude plugin *)",
+      "Read(//home/czh/.claude/**)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(git clone *)",
+      "Bash(cp -r /home/czh/big_space/aiagent/ai_lab_task/.claude/superpowers/skills /home/czh/big_space/aiagent/ai_lab_task/.claude/skills)"
+    ]
+  }
+}
