@@ -8,7 +8,8 @@
       "WebFetch(domain:deepwiki.com)",
       "Bash(git clone *)",
       "Bash(cp -r /home/czh/big_space/aiagent/ai_lab_task/.claude/superpowers/skills /home/czh/big_space/aiagent/ai_lab_task/.claude/skills)",
-      "Read(//home/czh/**)"
+      "Read(//home/czh/**)",
+      "Bash(python3 -c ' *)"
     ],
     "additionalDirectories": [
       "/home/czh/.claude"
