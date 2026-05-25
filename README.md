@@ -20,7 +20,7 @@
 
 **Synapse_Rader** 是一个 AI 驱动的技术情报雷达系统。它像一个不知疲倦的 AI 分析师团队，每天自动完成：
 
-1. **采集** — 从 GitHub、HF Mirror、Hacker News、arXiv 五大信源并行抓取最新 AI 动态
+1. **采集** — 从 GitHub、HF Mirror、Hacker News、arXiv 四大信源并行抓取最新 AI 动态
 2. **筛选** — 关键词初筛 + LLM 分类 + LLM 去噪三级过滤，从 80+ 条原始信息中精选 10-20 条高质量情报
 3. **分析** — 每条情报由 LLM 进行四维评分（商业潜力、落地难度、性能指标、业务兼容性），附带置信度和详细评分理由
 4. **对比** — 基于 ChromaDB 向量检索，自动关联历史相似情报，追踪技术演进脉络
@@ -93,7 +93,7 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
 | Hacker News | AI/LLM/Agent 相关高热度讨论 | Top 20 | HN Algolia API |
 | arXiv | cs.AI / cs.CL / cs.CV / cs.LG (近3日) | Top 20 | arXiv API + feedparser |
 
-- 5 源并行采集，总耗时 < 60 秒
+- 4 源并行采集，总耗时 < 60 秒
 - SHA256(URL+title) 去重，准确率 100%
 - 单源故障不影响其他信源，失败源自动记录到日志
 
@@ -259,7 +259,7 @@ synapse_rader/
 │   │   ├── state.py               # AgentState TypedDict 定义
 │   │   ├── graph.py               # LangGraph StateGraph 构建 + 编译
 │   │   ├── nodes/
-│   │   │   ├── collector.py       # Collector Agent — 5源并行采集
+│   │   │   ├── collector.py       # Collector Agent — 4源并行采集
 │   │   │   ├── curator.py         # Curator Agent — L1/L2/L3 三级过滤
 │   │   │   ├── analyst.py         # Analyst Agent — 四维评分 + RAG 检索
 │   │   │   ├── editor.py          # Editor Agent — 日报生成
@@ -330,19 +330,6 @@ synapse_rader/
 ### 历史检索
 
 在 `/history` 页面按日期范围、分类、推荐等级、评分范围、关键词组合检索，秒级响应（< 1 秒 / 1000 条数据），支持分页和详情展开。
-
-
-## 路线图
-
-| 优先级 | 功能 | 状态 |
-|------|------|------|
-| P0 | 多信源采集 + 三级筛选 + 四维评分 + RAG + 日报 + 飞书推送 + Web 控制台 | 开发中 |
-| P1 | 扩展信源 (Twitter/X, Reddit, 知乎, 公众号, 机器之心, 量子位) | 计划中 |
-| P1 | 用户偏好定制 (个性化日报) | 计划中 |
-| P1 | 实时热点告警 (GitHub 一夜千星 → 立即推送) | 计划中 |
-| P2 | 深度复现验证 (自动部署 + benchmark) | 远期 |
-| P2 | 趋势周报/月报 + ECharts 可视化 | 远期 |
-| P3 | 飞书 Bot 交互 (@Bot 查询/触发) | 远期 |
 
 
 ## 许可证
