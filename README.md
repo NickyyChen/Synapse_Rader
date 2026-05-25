@@ -1,4 +1,3 @@
-
 # Synapse_Rader
 
 <p align="center">
@@ -17,16 +16,12 @@
   每日自动采集 · 智能筛选去噪 · 四维 LLM 评分 · RAG 历史对比 · 飞书推送 · Web 控制台
 </p>
 
----
-
-## 这是一个MVP的多智能体项目
-
-2025-2026 年，AI 领域进入技术爆发期。多模态大模型、AI Agent、开源工具链每天都有重大更新——GitHub 每日诞生数百个 AI 项目，arXiv 每日发布数百篇论文，HuggingFace 和 ModelScope 每天涌现新模型。技术迭代速度远超个人追踪能力。
+2025-2026 年，AI 领域进入技术爆发期。多模态大模型、AI Agent、开源工具链每天都有重大更新——GitHub 每日诞生数百个 AI 项目，arXiv 每日发布数百篇论文，HF Mirror 和 Hacker News 每天涌现新的 AI 项目和讨论。技术迭代速度远超个人追踪能力。
 
 **Synapse_Rader** 是一个 AI 驱动的技术情报雷达系统。它像一个不知疲倦的 AI 分析师团队，每天自动完成：
 
-1. **采集** — 从 GitHub、HuggingFace、ModelScope、arXiv 四大信源并行抓取最新 AI 动态
-2. **筛选** — 关键词初筛 + LLM 分类 + LLM 去噪三级过滤，从 60+ 条原始信息中精选 10-20 条高质量情报
+1. **采集** — 从 GitHub、HF Mirror、Hacker News、arXiv 五大信源并行抓取最新 AI 动态
+2. **筛选** — 关键词初筛 + LLM 分类 + LLM 去噪三级过滤，从 80+ 条原始信息中精选 10-20 条高质量情报
 3. **分析** — 每条情报由 LLM 进行四维评分（商业潜力、落地难度、性能指标、业务兼容性），附带置信度和详细评分理由
 4. **对比** — 基于 ChromaDB 向量检索，自动关联历史相似情报，追踪技术演进脉络
 5. **报告** — 自动生成结构化 Markdown 日报，区分"强烈推荐 / 值得关注 / 暂不跟进"
@@ -34,7 +29,6 @@
 
 **目标：让技术决策者每天早上花 5 分钟，就能掌握前一日 AI 圈真正值得关注的一切。**
 
----
 
 ## 多智能体架构
 
@@ -49,24 +43,25 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
           │
           ▼
   ┌───────────────┐     ┌─────────────────────────────────────┐
-  │  Collector    │────▶│  4 线程并行调用 4 个 Fetcher          │
-  │  采集智能体    │     │  GitHub / HF / ModelScope / arXiv    │
-  └───────┬───────┘     │  → SHA256 去重 → 写入 raw_items 表    │
+  │  Collector    │────▶│  5 协程并行调用 5 个 Fetcher          │
+  │  采集智能体    │     │  GitHub / HF Mirror / Hacker News    │
+  └───────┬───────┘     │  / arXiv                             │
+          │             │  → SHA256 去重 → 写入 raw_items 表    │
           │             └─────────────────────────────────────┘
-          │  ~60 条原始条目
+          │  ~80 条原始条目
           ▼
   ┌───────────────┐     ┌─────────────────────────────────────┐
   │  Curator      │────▶│  L1 关键词过滤 (规则引擎, 毫秒级)      │
   │  策展智能体    │     │  L2 LLM 分类 (领域归属 + 打标签)       │
   └───────┬───────┘     │  L3 LLM 去噪 (剔除灌水/营销)          │
-          │             │  ~60 → ~35 → ~20 → ~15 条             │
+          │             │  ~80 → ~45 → ~25 → ~15 条             │
           │ ~15 条精选情报  └─────────────────────────────────────┘
           ▼
   ┌───────────────┐     ┌─────────────────────────────────────┐
   │  Analyst      │────▶│  每条情报: RAG检索历史top-5           │
   │  分析智能体    │     │  → LLM 四维评分 (自适应权重)          │
   └───────┬───────┘     │  → 即时写入 ChromaDB 向量库            │
-          │             │  8 线程并行, 15条 < 3分钟              │
+          │             │  8 并发, 15条 < 3分钟                 │
           │ 每条含评分+置信度  └─────────────────────────────────────┘
           ▼
   ┌───────────────┐     ┌─────────────────────────────────────┐
@@ -86,7 +81,6 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
     8:00 飞书推送送达
 ```
 
----
 
 ## 核心功能
 
@@ -94,12 +88,12 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
 
 | 信源 | 采集范围 | 数量 | 方式 |
 |------|---------|------|------|
-| GitHub | Python 语言 ML 仓库 Trending | Top 20 | GitHub REST API |
-| HuggingFace | Trending models/datasets/spaces | Top 20 | HF Hub API |
-| ModelScope | 魔搭社区热门模型/数据集 | Top 20 | ModelScope API |
-| arXiv | cs.AI / cs.CL / cs.CV / cs.LG | Top 20 | arXiv API + feedparser |
+| GitHub | Python 语言 Trending + 每日新项目 | Top 20×2 | GitHub REST API |
+| HF Mirror | HuggingFace 热门模型 (国内镜像) | Top 20 | hf-mirror.com API |
+| Hacker News | AI/LLM/Agent 相关高热度讨论 | Top 20 | HN Algolia API |
+| arXiv | cs.AI / cs.CL / cs.CV / cs.LG (近3日) | Top 20 | arXiv API + feedparser |
 
-- 4 源并行采集，总耗时 < 60 秒
+- 5 源并行采集，总耗时 < 60 秒
 - SHA256(URL+title) 去重，准确率 100%
 - 单源故障不影响其他信源，失败源自动记录到日志
 
@@ -153,7 +147,6 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
 | 历史检索 | `/history` | 日期/分类/评分/关键词多条件检索 + 分页 + 详情展开 |
 | 手动触发 | `/trigger` | 一键触发日报流程 + 5 节点实时进度条 + 执行历史日志 |
 
----
 
 ## 技术栈
 
@@ -162,10 +155,10 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
 │     前端        │      后端         │      基础设施         │
 │                │                  │                     │
 │  Vue 3         │  FastAPI         │  Docker Compose     │
-│  Vite 5        │  LangGraph 0.3   │  SQLite             │
+│  Vite 5        │  LangGraph 1.2   │  SQLite             │
 │  TypeScript    │  DeepSeek-v4-pro │  ChromaDB           │
 │  Naive UI      │  SQLAlchemy 2.x  │  APScheduler        │
-│                │  httpx + aiohttp │  lark-oapi          │
+│                │  httpx           │  lark-oapi          │
 └────────────────┴──────────────────┴─────────────────────┘
 ```
 
@@ -179,15 +172,14 @@ Synapse_Rader 的核心是一个基于 **LangGraph StateGraph** 编排的多智�
 | 调度 | APScheduler (内嵌) | Celery + Redis |
 | 部署 | Docker Compose | Kubernetes |
 
----
 
 ## 快速开始
 
 ### 环境要求
 
-- Python 3.11+
+- Python 3.10+
 - Node.js 18+
-- Docker & Docker Compose（可选，推荐）
+- Docker & Docker Compose（可选）
 
 ### 1. 克隆仓库
 
@@ -209,14 +201,19 @@ cp backend/.env.example backend/.env
 DEEPSEEK_API_KEY=sk-xxxxxxxx
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
-# 飞书应用 (推送必需)
+# Embedding 模型（本地 bge-large-zh-v1.5）
+EMBEDDING_BACKEND=local
+EMBEDDING_MODEL=/path/to/bge-large-zh-v1.5
+EMBEDDING_DEVICE=cpu
+
+# 飞书应用 (推送必需，可后配)
 FEISHU_APP_ID=cli_xxxxxxxx
 FEISHU_APP_SECRET=xxxxxxxx
 FEISHU_CHAT_ID=oc_xxxxxxxx
 
 # 数据库 (可选，以下为默认值)
-DATABASE_URL=sqlite+aiosqlite:///./data/synapse_rader.db
-CHROMA_PERSIST_PATH=./data/chroma
+DATABASE_URL=sqlite+aiosqlite:///../data/synapse_rader.db
+CHROMA_PERSIST_PATH=../data/chroma
 ```
 
 ### 3. 一键启动 (Docker)
@@ -233,6 +230,7 @@ docker compose up -d
 
 ```bash
 # 后端
+conda activate aiagent
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -243,7 +241,6 @@ npm install
 npm run dev
 ```
 
----
 
 ## 项目结构
 
@@ -251,7 +248,7 @@ npm run dev
 synapse_rader/
 ├── backend/
 │   ├── main.py                    # FastAPI 入口 + lifespan 事件
-│   ├── config.py                  # 配置管理 (环境变量读取)
+│   ├── settings.py                # 配置管理 (17 环境变量)
 │   ├── scheduler.py               # APScheduler 定时任务 (7:00采集, 8:00推送)
 │   ├── api/
 │   │   ├── reports.py             # GET /api/report/today, /api/report/{date}
@@ -262,18 +259,19 @@ synapse_rader/
 │   │   ├── state.py               # AgentState TypedDict 定义
 │   │   ├── graph.py               # LangGraph StateGraph 构建 + 编译
 │   │   ├── nodes/
-│   │   │   ├── collector.py       # Collector Agent — 4源并行采集
+│   │   │   ├── collector.py       # Collector Agent — 5源并行采集
 │   │   │   ├── curator.py         # Curator Agent — L1/L2/L3 三级过滤
 │   │   │   ├── analyst.py         # Analyst Agent — 四维评分 + RAG 检索
 │   │   │   ├── editor.py          # Editor Agent — 日报生成
 │   │   │   └── dispatcher.py      # Dispatcher Agent — 飞书推送
 │   │   └── tools/
-│   │       ├── fetchers.py        # 4 个信源采集器 (GitHub/HF/ModelScope/arXiv)
+│   │       ├── fetchers.py        # 5 个信源采集器 (GitHub×2/HF Mirror/HN/arXiv)
 │   │       ├── feishu.py          # 飞书 Bot 消息 + 文档创建
-│   │       ├── llm.py             # DeepSeek LLM 封装 (3 种温度配置)
+│   │       ├── llm.py             # DeepSeek LLM 封装 (4 种温度配置)
 │   │       ├── rag.py             # ChromaDB 混合检索 + Embedding
 │   │       ├── prompts.py         # 分析/分类/日报 Prompt 模板 (含 few-shot)
-│   │       └── storage.py         # 去重 + 批量入库 + 状态更新
+│   │       ├── storage.py         # 去重 + 批量入库 + 状态更新
+│   │       └── embedding/         # 可替换 Embedding 后端 (local/openai)
 │   ├── models/
 │   │   └── database.py            # SQLAlchemy ORM (4 表: raw_items/analyzed_items/
 │   │                               #   daily_reports/execution_logs)
@@ -294,14 +292,13 @@ synapse_rader/
 │           └── RunStatus.vue       # 5 节点执行进度组件
 │
 ├── config/
-│   └── keywords.yaml               # L1 关键词过滤配置
+│   └── keywords.yaml               # L1 关键词过滤配置 (34 个中英文关键词)
 ├── data/                           # SQLite + ChromaDB 持久化目录
 ├── logs/                           # 执行日志
 ├── docker-compose.yml
 └── README.md
 ```
 
----
 
 ## 使用指南
 
@@ -310,7 +307,7 @@ synapse_rader/
 ```
 每日 7:00  APScheduler 触发采集分析任务
      ↓     Collector → Curator → Analyst → Editor
-     ↓     4源采集 → 三级过滤 → 四维评分 → 日报生成
+     ↓     5源采集 → 三级过滤 → 四维评分 → 日报生成
      ↓     (预期耗时 15-25 分钟)
 每日 8:00  APScheduler 触发推送任务
      ↓     Dispatcher → 飞书群 @all + 飞书文档
@@ -334,7 +331,6 @@ synapse_rader/
 
 在 `/history` 页面按日期范围、分类、推荐等级、评分范围、关键词组合检索，秒级响应（< 1 秒 / 1000 条数据），支持分页和详情展开。
 
----
 
 ## 路线图
 
@@ -348,13 +344,11 @@ synapse_rader/
 | P2 | 趋势周报/月报 + ECharts 可视化 | 远期 |
 | P3 | 飞书 Bot 交互 (@Bot 查询/触发) | 远期 |
 
----
 
 ## 许可证
 
 MIT License
 
----
 
 <p align="center">
   <b>Synapse_Rader</b> — 让 AI 帮你追踪 AI 的进化
